@@ -1,6 +1,5 @@
 'use strict';
 
-
 function parseMongoosePath(path, schema) {
 	path = path || '';
 
@@ -31,7 +30,6 @@ function parseMongoosePath(path, schema) {
 
 	return schema;
 }
-
 
 function parseMongooseType(schema, type, options) {
 	var json = {};
@@ -108,6 +106,30 @@ function defaultRequireFn (path, options) {
 	return false;
 }
 
+function restPatchRequireFn(path, options) {
+	return false;
+}
+
+function restPatchExcludeFn(path, options) {
+	if(options.patch === false) {
+		return false;
+	}
+
+	return defaultExcludeFn(path, options);
+}
+
+function restExcludePathsFn(paths) {
+	return function(path, options) {
+		for(var i=0; i<paths.length; i++) {
+			if(paths[i] === path) {
+				return false;
+			}
+		}
+
+		return defaultExcludeFn(path, options);
+	};
+}
+
 function parseMongooseSchema(schema, excludeFn, requireFn) {
 	var jsonSchema = parseMongoosePath();
 
@@ -163,3 +185,8 @@ module.exports = function localePlugin (schema, options) {
 
 module.exports.defaultExcludeFn = defaultExcludeFn;
 module.exports.defaultRequireFn = defaultRequireFn;
+
+module.exports.restPatchRequireFn = restPatchRequireFn;
+
+module.exports.restPatchExcludeFn = restPatchExcludeFn;
+module.exports.restExcludePathsFn = restExcludePathsFn;
