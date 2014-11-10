@@ -34,10 +34,16 @@ function parseMongoosePath(path, schema) {
 function parseMongooseType(schema, type, options) {
 	var json = {};
 
+
 	if(type === false || options.auto) {
 		return null;
 	} else if(type === String) {
 		json.type = 'string';
+/*
+		if(options.enum) {
+			delete json.type;
+			json.enum = options.enum;
+		}*/
 
 		if(typeof options.minLength !== 'undefined') {
 			json.minLength = options.minLength;
@@ -82,6 +88,8 @@ function parseMongooseType(schema, type, options) {
 		itemType = itemType.type ? itemType.type : itemType;
 
 		json.item = parseMongooseType(schema, itemType, itemOptions);
+	} else if(typeof type === 'object' && type !== null) {
+		
 	}
 
 	return json;
@@ -89,15 +97,15 @@ function parseMongooseType(schema, type, options) {
 
 function defaultExcludeFn(path, options) {
 	if(options.readOnly) {
-		return false;
+		return true;
 	}
 
 	var field = path.split('.').pop();
 	if(field === '__v') {
-		return false;
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 function defaultRequireFn (path, options) {
@@ -108,18 +116,31 @@ function defaultRequireFn (path, options) {
 	return false;
 }
 
-function restPatchRequireFn(path, options) {
-	return false;
+function restExcludeFn(restOptions) {
+	restOptions = restOptions || {};
+
+	return function(path, options) {
+		if(options.restExclude === true) {
+			return true;
+		}
+
+		return defaultExcludeFn(path, options);
+	};
 }
 
-function restPatchExcludeFn(path, options) {
-	if(options.patch === false) {
-		return false;
-	}
+function restRequireFn(restOptions) {
+	restOptions = restOptions || {};
 
-	return defaultExcludeFn(path, options);
+	var isPatch = restOptions.isPatch || false;
+
+	return function(path, options) {
+		if(isPatch) {
+			return false;
+		}
+
+		return defaultRequireFn(path, options);
+	};
 }
-
 
 function restExcludePathsFn(paths) {
 	var obj = {};
@@ -128,19 +149,22 @@ function restExcludePathsFn(paths) {
 	}
 
 	return function(path, options) {
-		if(obj[path] === true) {
-			return false;
+		if(options.restExclude === true || obj[path] === true) {
+			return true;
 		}
 
 		return defaultExcludeFn(path, options);
 	};
 }
 
+
 function parseMongooseSchema(schema, excludeFn, requireFn) {
 	var jsonSchema = parseMongoosePath();
 
 	excludeFn = excludeFn || defaultExcludeFn;
 	requireFn = requireFn || defaultRequireFn;
+
+	console.log(excludeFn);
 
 	schema.eachPath(function(path, config) {
 		var localJSONSchema = parseMongoosePath(path, jsonSchema),
@@ -149,14 +173,19 @@ function parseMongooseSchema(schema, excludeFn, requireFn) {
 			caster = config.caster || {},
 			options = caster.options || config.options || {};
 
-		if(!excludeFn(path, options)) {
+		if(excludeFn(path, options)) {
 			return;
 		}
 
 		var fieldValue = null;
 
 		if(config.schema) {
-			fieldValue = parseMongooseSchema(config.schema, excludeFn, requireFn);
+			if(Array.isArray(type)) {
+				fieldValue = parseMongooseType(schema, type, options);
+				fieldValue.item = parseMongooseSchema(config.schema, excludeFn, requireFn);
+			} else {
+				fieldValue = parseMongooseSchema(config.schema, excludeFn, requireFn);	
+			}
 		} else {
 			fieldValue = parseMongooseType(schema, type, options);
 		}
@@ -175,29 +204,33 @@ function parseMongooseSchema(schema, excludeFn, requireFn) {
 	return jsonSchema;
 }
 
-module.exports = function localePlugin (schema, options) {
+module.exports = function mongooseJSONSchema (schema, options) {
 	//prepare arguments
 	options = options || {};
+
+	options.excludeFn = options.excludeFn || defaultExcludeFn;
+	options.requireFn = options.requireFn || defaultRequireFn;
+
+	options.restExcludeFn = options.restExcludeFn || restExcludeFn();
+	options.restRequireFn = options.restRequireFn || restRequireFn();
 
 	schema.methods.getJSONSchema = function(excludeFn, requireFn) {
 		return parseMongooseSchema(schema, excludeFn || options.excludeFn, requireFn || options.requireFn);
 	};
 
-	schema.statics.getJSONSchema = function(excludeFn, requireFn) {
-		return parseMongooseSchema(schema, excludeFn || options.excludeFn, requireFn || options.requireFn);
+	schema.statics.getJSONSchema = schema.methods.getJSONSchema;
+
+	schema.methods.getRestJSONSchema = function(restOptions) {
+		return parseMongooseSchema(schema, restExcludeFn(restOptions), restRequireFn(restOptions));
 	};
+
+	schema.statics.getRestJSONSchema = schema.methods.getRestJSONSchema;	
 };
 
 module.exports.parseMongoosePath = parseMongoosePath;
 module.exports.parseMongooseType = parseMongooseType;
 
-
 module.exports.defaultExcludeFn = defaultExcludeFn;
 module.exports.defaultRequireFn = defaultRequireFn;
 
-module.exports.restPatchRequireFn = restPatchRequireFn;
-
-module.exports.restPatchExcludeFn = restPatchExcludeFn;
 module.exports.restExcludePathsFn = restExcludePathsFn;
-
-

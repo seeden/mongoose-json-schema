@@ -15,6 +15,7 @@ describe('Model1', function() {
 	});
 
 	it('should be able to create model', function(done) {
+
 		var schema = new Schema({
 			name        : { type: String, required: true, index: 'text', locale: true },
 			company     : { type: Schema.ObjectId, ref: 'Company', required: true },
@@ -27,6 +28,15 @@ describe('Model1', function() {
 				_id         : false,
 				fileName    : { type: Number, required: true }
 			}],
+
+			images2      : {
+				type: [{
+					_id         : false,
+					fileName    : { type: Number, required: true }
+				}],
+				minItems: 5,
+				required: true
+			},
 
 			metadata   : [{
 				_id   : false,
@@ -50,7 +60,6 @@ describe('Model1', function() {
 	it('should be able to create json schema', function(done) {
 		var schema = Model.getJSONSchema();
 		var json = JSON.stringify(schema, null, 4);
-		
 
 		schema.should.have.property('additionalProperties');
 		schema.additionalProperties.should.equal(false);
