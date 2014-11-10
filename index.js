@@ -50,6 +50,7 @@ function parseMongooseType(schema, type, options) {
 		json.type = 'boolean';
 	} else if(type === schema.constructor.Types.ObjectId) {
 		json.type = 'string';
+		json.pattern = /^[a-fA-F0-9]{24}$/.source;
 	} else if(type === Number) {
 		json.type = 'number';
 
@@ -62,6 +63,7 @@ function parseMongooseType(schema, type, options) {
 		}
 	} else if(type === Date) {
 		json.type = 'string';
+		json.pattern = /(\d\d\d\d)(-)?(\d\d)(-)?(\d\d)(T)?(\d\d)(:)?(\d\d)(:)?(\d\d)(\.\d+)?(Z|([+-])(\d\d)(:)?(\d\d))/.source
 	} else if(Array.isArray(type)) {
 		json.type = 'array';
 
@@ -118,12 +120,16 @@ function restPatchExcludeFn(path, options) {
 	return defaultExcludeFn(path, options);
 }
 
+
 function restExcludePathsFn(paths) {
+	var obj = {};
+	for(var i=0; i<paths.length; i++) {
+		obj[paths[i]] = true;
+	}
+
 	return function(path, options) {
-		for(var i=0; i<paths.length; i++) {
-			if(paths[i] === path) {
-				return false;
-			}
+		if(obj[path] === true) {
+			return false;
 		}
 
 		return defaultExcludeFn(path, options);
@@ -182,6 +188,9 @@ module.exports = function localePlugin (schema, options) {
 	};
 };
 
+module.exports.parseMongoosePath = parseMongoosePath;
+module.exports.parseMongooseType = parseMongooseType;
+
 
 module.exports.defaultExcludeFn = defaultExcludeFn;
 module.exports.defaultRequireFn = defaultRequireFn;
@@ -190,3 +199,5 @@ module.exports.restPatchRequireFn = restPatchRequireFn;
 
 module.exports.restPatchExcludeFn = restPatchExcludeFn;
 module.exports.restExcludePathsFn = restExcludePathsFn;
+
+
