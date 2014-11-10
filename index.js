@@ -39,11 +39,11 @@ function parseMongooseType(schema, type, options) {
 		return null;
 	} else if(type === String) {
 		json.type = 'string';
-/*
+
 		if(options.enum) {
 			delete json.type;
 			json.enum = options.enum;
-		}*/
+		}
 
 		if(typeof options.minLength !== 'undefined') {
 			json.minLength = options.minLength;
