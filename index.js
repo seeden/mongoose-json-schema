@@ -87,7 +87,7 @@ function parseMongooseType(schema, type, options) {
 
 		itemType = itemType.type ? itemType.type : itemType;
 
-		json.item = parseMongooseType(schema, itemType, itemOptions);
+		json.items = parseMongooseType(schema, itemType, itemOptions);
 	} else if(typeof type === 'object' && type !== null) {
 		
 	}
@@ -164,7 +164,6 @@ function parseMongooseSchema(schema, excludeFn, requireFn) {
 	excludeFn = excludeFn || defaultExcludeFn;
 	requireFn = requireFn || defaultRequireFn;
 
-	console.log(excludeFn);
 
 	schema.eachPath(function(path, config) {
 		var localJSONSchema = parseMongoosePath(path, jsonSchema),
@@ -182,7 +181,7 @@ function parseMongooseSchema(schema, excludeFn, requireFn) {
 		if(config.schema) {
 			if(Array.isArray(type)) {
 				fieldValue = parseMongooseType(schema, type, options);
-				fieldValue.item = parseMongooseSchema(config.schema, excludeFn, requireFn);
+				fieldValue.items = parseMongooseSchema(config.schema, excludeFn, requireFn);
 			} else {
 				fieldValue = parseMongooseSchema(config.schema, excludeFn, requireFn);	
 			}

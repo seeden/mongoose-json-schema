@@ -17,6 +17,10 @@ describe('Model1', function() {
 	it('should be able to create model', function(done) {
 
 		var schema = new Schema({
+			test: {
+				fileName    : { type: Number, required: true }
+
+			},
 			name        : { type: String, required: true, index: 'text', locale: true },
 			company     : { type: Schema.ObjectId, ref: 'Company', required: true },
 			price       : { type: Number, required: true, index: true },
@@ -60,6 +64,8 @@ describe('Model1', function() {
 	it('should be able to create json schema', function(done) {
 		var schema = Model.getJSONSchema();
 		var json = JSON.stringify(schema, null, 4);
+
+		console.log(json);
 
 		schema.should.have.property('additionalProperties');
 		schema.additionalProperties.should.equal(false);
