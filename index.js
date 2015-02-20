@@ -89,7 +89,7 @@ function parseMongooseType(schema, type, options) {
 
 		json.items = parseMongooseType(schema, itemType, itemOptions);
 	} else if(typeof type === 'object' && type !== null) {
-		
+		json = null;
 	}
 
 	return json;
