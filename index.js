@@ -54,10 +54,10 @@ function parseMongooseType(schema, type, options) {
 		}
 	} else if(type === Boolean) {
 		json.type = 'boolean';
-	} else if(type === schema.constructor.Types.ObjectId) {
+	} /*else if(type === schema.constructor.Types.ObjectId) {
 		json.type = 'string';
 		json.pattern = /^[a-fA-F0-9]{24}$/.source;
-	} else if(type === Number) {
+	}*/ else if(type === Number) {
 		json.type = 'number';
 
 		if(typeof options.min !== 'undefined') {
